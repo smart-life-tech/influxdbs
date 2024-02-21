@@ -52,11 +52,6 @@ float initialBatteryVoltage = 0.0;
 int fileCount = 0;
 float temperature = 0.0;
 float batteryVoltage = 0.0;
-struct DataPoint
-{
-  float temperature;
-  float batteryVoltage;
-};
 
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
@@ -331,11 +326,15 @@ void loop()
     //  Save data to SPIFFS if USB power is not present
     saveDataToSPIFFS(temperature, batteryVoltage);
   }
-  Serial.println("Wait 30s");
+
   if (writing)
   {
+    Serial.println("Wait 1s writing data");
     delay(1000);
   }
   else
+  {
+    Serial.println("Wait 30s");
     delay(30000);
+  }
 }
