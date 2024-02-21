@@ -17,7 +17,7 @@
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800);
 
 int DELAYVAL = 500; // Time (in milliseconds) to pause between pixels
-
+bool writing = false;
 UMS3 ums3;
 
 WiFiMulti wifiMulti;
@@ -50,6 +50,8 @@ Point sensorReadings("measurements");
 unsigned long startMillis = 0;
 float initialBatteryVoltage = 0.0;
 int fileCount = 0;
+float temperature = 0.0;
+float batteryVoltage = 0.0;
 struct DataPoint
 {
   float temperature;
@@ -113,11 +115,18 @@ void uploadDataFromSPIFFS()
     Serial.println("No data to upload from SPIFFS");
     return;
   }
-
+  if (!file.available())
+  {
+    Serial.println("No data to upload from SPIFFS");
+    // Delete data file from SPIFFS after upload
+    SPIFFS.remove(DATA_FILE);
+    writing = false;
+  }
   while (file.available())
   {
-    float temperature;
-    float batteryVoltage;
+    writing = true;
+    temperature;
+    batteryVoltage;
 
     size_t bytesRead = file.read((uint8_t *)&temperature, sizeof(temperature));
     if (bytesRead != sizeof(temperature))
@@ -132,22 +141,24 @@ void uploadDataFromSPIFFS()
       Serial.println("Error reading battery voltage from SPIFFS");
       break;
     }
-    sensorReadings.clearFields();
-    sensorReadings.addField("temperature", temperature);
-    sensorReadings.addField("battery_voltage", batteryVoltage);
+    // sensorReadings.clearFields();
+    // sensorReadings.addField("temperature", temperature);
+    // sensorReadings.addField("battery_voltage", batteryVoltage);
 
-    Serial.print("Writing data from SPIFFS: ");
-    Serial.println(client.pointToLineProtocol(sensorReadings));
+    Serial.println("Writing data from SPIFFS: ");
+    Serial.print("temperature:");
+    Serial.println(temperature);
+    Serial.print("voltage :");
+    Serial.println(batteryVoltage);
+    // Serial.println(client.pointToLineProtocol(sensorReadings));
 
-    client.writePoint(sensorReadings);
-    Serial.println(client.writePoint(sensorReadings));
+    // client.writePoint(sensorReadings);
+    // Serial.println(client.writePoint(sensorReadings));
     delay(1000);
+    break;
   }
 
   file.close();
-
-  // Delete data file from SPIFFS after upload
-  SPIFFS.remove(DATA_FILE);
 }
 void initDS18B20()
 {
@@ -239,8 +250,8 @@ void loop()
     Serial.println("wifi connected");
   }
   sensors.requestTemperatures();
-  float temperature = sensors.getTempCByIndex(0);
-  float batteryVoltage = ums3.getBatteryVoltage();
+  temperature = sensors.getTempCByIndex(0);
+  batteryVoltage = ums3.getBatteryVoltage();
   delay(1000);
 
   // Upload data from SPIFFS if WiFi connection is restored
@@ -321,5 +332,10 @@ void loop()
     saveDataToSPIFFS(temperature, batteryVoltage);
   }
   Serial.println("Wait 30s");
-  delay(30000);
+  if (writing)
+  {
+    delay(1000);
+  }
+  else
+    delay(30000);
 }
