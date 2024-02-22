@@ -330,7 +330,7 @@ void loop()
   if (writing)
   {
     Serial.println("Wait 1s writing data");
-    delay(1000);
+    delay(2000);
   }
   else
   {
