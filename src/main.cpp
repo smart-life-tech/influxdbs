@@ -103,7 +103,8 @@ void uploadDataFromSPIFFS()
     temperature = temp[counter];
     batteryVoltage = volt[counter];
     counter--;
-    Serial.println("Writing data from SPIFFS: ");
+    Serial.print("Writing data from memory :");
+    Serial.println(counter);
     Serial.print("temperature:");
     Serial.println(temperature);
     Serial.print("voltage :");
@@ -112,6 +113,7 @@ void uploadDataFromSPIFFS()
   }
   else
   {
+     Serial.print("no data from memory ");
     writing = false;
   }
 }
