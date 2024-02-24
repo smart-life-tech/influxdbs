@@ -7,7 +7,6 @@
 #include <InfluxDbCloud.h>
 #include <UMS3.h>
 #include <esp_bt.h>
-#include <SPIFFS.h>
 #include <Adafruit_NeoPixel.h>
 #include <FS.h>
 
@@ -87,74 +86,36 @@ void rainbow(uint8_t wait)
     // break;
   }
 }
-
+int counter = 0;
+int temp[1000] = {};
+int volt[1000] = {};
 void saveDataToSPIFFS(float temperature, float batteryVoltage)
 {
-  File file = SPIFFS.open(DATA_FILE, FILE_APPEND);
-  if (!file)
-  {
-    Serial.println("Failed to open file for writing");
-    return;
-  }
-
-  file.write((uint8_t *)&temperature, sizeof(temperature));
-  file.write((uint8_t *)&batteryVoltage, sizeof(batteryVoltage));
-
-  file.close();
+  counter++;
+  temp[counter] = temperature;
+  volt[counter] = batteryVoltage;
 }
 void uploadDataFromSPIFFS()
 {
-  File file = SPIFFS.open(DATA_FILE, FILE_READ);
-  if (!file)
-  {
-    Serial.println("No data to upload from SPIFFS");
-    return;
-  }
-  if (!file.available())
-  {
-    Serial.println("No data to upload from SPIFFS");
-    // Delete data file from SPIFFS after upload
-    SPIFFS.remove(DATA_FILE);
-    writing = false;
-  }
-  while (file.available())
+  if (counter > 0)
   {
     writing = true;
-    temperature;
-    batteryVoltage;
-
-    size_t bytesRead = file.read((uint8_t *)&temperature, sizeof(temperature));
-    if (bytesRead != sizeof(temperature))
-    {
-      Serial.println("Error reading temperature from SPIFFS");
-      break;
-    }
-
-    bytesRead = file.read((uint8_t *)&batteryVoltage, sizeof(batteryVoltage));
-    if (bytesRead != sizeof(batteryVoltage))
-    {
-      Serial.println("Error reading battery voltage from SPIFFS");
-      break;
-    }
-    // sensorReadings.clearFields();
-    // sensorReadings.addField("temperature", temperature);
-    // sensorReadings.addField("battery_voltage", batteryVoltage);
-
+    temperature = temp[counter];
+    batteryVoltage = volt[counter];
+    counter--;
     Serial.println("Writing data from SPIFFS: ");
     Serial.print("temperature:");
     Serial.println(temperature);
     Serial.print("voltage :");
     Serial.println(batteryVoltage);
-    // Serial.println(client.pointToLineProtocol(sensorReadings));
-
-    // client.writePoint(sensorReadings);
-    // Serial.println(client.writePoint(sensorReadings));
-    delay(1000);
-    break;
+    delay(500);
   }
-
-  file.close();
+  else
+  {
+    writing = false;
+  }
 }
+
 void initDS18B20()
 {
   sensors.begin();
@@ -204,13 +165,6 @@ void setup()
     Serial.println(client.getLastErrorMessage());
   }
 
-  // Initialize SPIFFS
-  if (!SPIFFS.begin())
-  {
-    Serial.println("Failed to mount file system");
-    return;
-  }
-  SPIFFS.remove(DATA_FILE);
   startMillis = millis();                           // Store the current time
   initialBatteryVoltage = ums3.getBatteryVoltage(); // Store initial battery voltage
   strip.begin();                                    // Initialize the NeoPixel library
