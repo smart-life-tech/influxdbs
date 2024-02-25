@@ -87,8 +87,8 @@ void rainbow(uint8_t wait)
   }
 }
 int counter = 0;
-int temp[1000] = {};
-int volt[1000] = {};
+float temp[1000] = {};
+float volt[1000] = {};
 void saveDataToSPIFFS(float temperature, float batteryVoltage)
 {
   counter++;
@@ -104,7 +104,7 @@ void uploadDataFromSPIFFS()
     writing = true;
     temperature = temp[counter];
     batteryVoltage = volt[counter];
-    counter--;
+
     Serial.print("Writing data from memory :");
     Serial.println(counter);
     Serial.print("temperature:");
@@ -114,6 +114,7 @@ void uploadDataFromSPIFFS()
     delay(500);
     Serial.print("data retrived  at address :");
     Serial.println(counter);
+    counter--;
   }
   else
   {
@@ -180,6 +181,7 @@ void setup()
 void loop()
 {
   // Check USB presence
+  sensorReadings.clearFields();
   int usbPresence = ums3.getVbusPresent();
 
   if (usbPresence == 0 && WiFi.status() != WL_CONNECTED)
@@ -207,7 +209,7 @@ void loop()
   sensors.requestTemperatures();
   temperature = sensors.getTempCByIndex(0);
   batteryVoltage = ums3.getBatteryVoltage();
-  delay(1000);
+  //delay(1000);
 
   // Upload data from SPIFFS if WiFi connection is restored
   if (client.validateConnection())
@@ -251,7 +253,6 @@ void loop()
     Serial.println(client.pointToLineProtocol(sensorReadings));
     client.writePoint(sensorReadings);
     Serial.println(client.writePoint(sensorReadings));
-    sensorReadings.clearFields();
   }
   // Read battery voltage
   float currentBatteryVoltage = ums3.getBatteryVoltage();
@@ -289,8 +290,8 @@ void loop()
 
   if (writing)
   {
-    Serial.println("Wait 1s writing data");
-    delay(2000);
+    Serial.println("Wait 5s writing data");
+    delay(5000);
   }
   else
   {
