@@ -89,11 +89,13 @@ void rainbow(uint8_t wait)
 int counter = 0;
 float temp[1000] = {};
 float volt[1000] = {};
+time_t timestamp[1000] = {};
 void saveDataToSPIFFS(float temperature, float batteryVoltage)
 {
   counter++;
   temp[counter] = temperature;
   volt[counter] = batteryVoltage;
+  timestamp[counter] = time(nullptr);
   Serial.print("data saved at address :");
   Serial.println(counter);
 }
@@ -209,7 +211,7 @@ void loop()
   sensors.requestTemperatures();
   temperature = sensors.getTempCByIndex(0);
   batteryVoltage = ums3.getBatteryVoltage();
-  //delay(1000);
+  // delay(1000);
 
   // Upload data from SPIFFS if WiFi connection is restored
   if (client.validateConnection())
@@ -251,7 +253,19 @@ void loop()
     sensorReadings.addField("usb_presence", usbPresence);
     Serial.print("Writing: ");
     Serial.println(client.pointToLineProtocol(sensorReadings));
-    client.writePoint(sensorReadings);
+    if (writing)
+    {
+      sensorReadings.setTime(timestamp[counter + 1]);
+      client.writePoint(sensorReadings);
+    }
+    else
+    {
+      // Resync time with NTP server
+      configTime(0, 0, "pool.ntp.org", "time.nis.gov");
+      timeSync(TZ_INFO, "pool.ntp.org", "time.nis.gov");
+
+      client.writePoint(sensorReadings);
+    }
     Serial.println(client.writePoint(sensorReadings));
   }
   // Read battery voltage
