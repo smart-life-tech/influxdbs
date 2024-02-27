@@ -9,6 +9,7 @@
 #include <esp_bt.h>
 #include <Adafruit_NeoPixel.h>
 #include <FS.h>
+#include <time.h>
 
 #define PIN 2      // Input your RGB LED module GPIO pin
 #define NUM_LEDS 1 // Number of LEDs in your module
@@ -251,10 +252,17 @@ void loop()
     sensorReadings.addField("temperature", temperature);
     sensorReadings.addField("battery_voltage", batteryVoltage);
     sensorReadings.addField("usb_presence", usbPresence);
+    time_t timestamps = timestamp[counter + 1]; // Corresponds to "February 23, 2022, 07:41:30 UTC"
+    // Convert the timestamp to a string in the desired format
+    char timestampStr[50];
+    sprintf(timestampStr, "%s", asctime(gmtime(&timestamps)));
+    sensorReadings.addField("timestamps", timestampStr);
     Serial.print("Writing: ");
     Serial.println(client.pointToLineProtocol(sensorReadings));
     if (writing)
     {
+      //setTime(timestamp[counter + 1]);
+      Serial.println(client.writePoint(sensorReadings));
       sensorReadings.setTime(timestamp[counter + 1]);
       client.writePoint(sensorReadings);
     }
@@ -263,10 +271,9 @@ void loop()
       // Resync time with NTP server
       configTime(0, 0, "pool.ntp.org", "time.nis.gov");
       timeSync(TZ_INFO, "pool.ntp.org", "time.nis.gov");
-
+      Serial.println(client.writePoint(sensorReadings));
       client.writePoint(sensorReadings);
     }
-    Serial.println(client.writePoint(sensorReadings));
   }
   // Read battery voltage
   float currentBatteryVoltage = ums3.getBatteryVoltage();
