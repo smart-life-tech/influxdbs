@@ -91,6 +91,7 @@ int counter = 0;
 float temp[1000] = {};
 float volt[1000] = {};
 time_t timestamp[1000] = {};
+
 void saveDataToSPIFFS(float temperature, float batteryVoltage)
 {
   counter++;
@@ -208,10 +209,11 @@ void loop()
       if (trial > 10)
       {
         trial = 0;
+        Serial.println("wifi dis-connected");
         break;
       }
     }
-    Serial.println("wifi connected");
+    
   }
   sensors.requestTemperatures();
   temperature = sensors.getTempCByIndex(0);
@@ -266,8 +268,6 @@ void loop()
       sensorReadings.addField("timestamps", timestampStr);
       Serial.print("Writing: ");
       Serial.println(client.pointToLineProtocol(sensorReadings));
-      // setTime(timestamp[counter + 1]);
-      Serial.println(client.writePoint(sensorReadings));
       sensorReadings.setTime(timestamp[counter + 1]);
       client.writePoint(sensorReadings);
     }
@@ -275,7 +275,6 @@ void loop()
     {
       time_t timestamps = time(nullptr);
       char timestampStr[50];
-      sprintf(timestampStr, "%s", asctime(gmtime(&timestamps)));
       sprintf(timestampStr, "%s", asctime(gmtime(&timestamps)));
       sensorReadings.addField("timestamps", timestampStr);
       Serial.print("Writing: ");
