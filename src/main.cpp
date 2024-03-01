@@ -52,7 +52,15 @@ float initialBatteryVoltage = 0.0;
 int fileCount = 0;
 float temperature = 0.0;
 float batteryVoltage = 0.0;
-
+int counter = 0;
+float temp[1000] = {};
+float volt[1000] = {};
+time_t timestamp[1000] = {};
+struct DataPoint
+{
+  String timestampStr; // Store timestamp as string
+};
+DataPoint dataPoint;
 OneWire oneWire(ONE_WIRE_BUS);
 DallasTemperature sensors(&oneWire);
 
@@ -87,10 +95,6 @@ void rainbow(uint8_t wait)
     // break;
   }
 }
-int counter = 0;
-float temp[1000] = {};
-float volt[1000] = {};
-time_t timestamp[1000] = {};
 
 void saveDataToSPIFFS(float temperature, float batteryVoltage)
 {
@@ -105,6 +109,7 @@ void saveDataToSPIFFS(float temperature, float batteryVoltage)
   sprintf(timestampStr, "%s", asctime(gmtime(&timestamps)));
   Serial.println(timestampStr);
 }
+
 void uploadDataFromSPIFFS()
 {
   if (counter > 0)
@@ -136,6 +141,7 @@ void initDS18B20()
   sensors.begin();
 }
 int trial = 0;
+
 void setup()
 {
   Serial.begin(115200);
@@ -213,7 +219,6 @@ void loop()
         break;
       }
     }
-    
   }
   sensors.requestTemperatures();
   temperature = sensors.getTempCByIndex(0);
@@ -255,20 +260,30 @@ void loop()
     }
     // Upload data from SPIFFS if WiFi connection is restored
     uploadDataFromSPIFFS();
-    sensorReadings.addField("temperature", temperature);
-    sensorReadings.addField("battery_voltage", batteryVoltage);
-    sensorReadings.addField("usb_presence", usbPresence);
 
     if (writing)
     {
+
       time_t timestamps = timestamp[counter + 1]; // Corresponds to "February 23, 2022, 07:41:30 UTC"
-      // Convert the timestamp to a string in the desired format
+                                                  // Set the timestamp for sensorReadings
+      sensorReadings.setTime(timestamps);
       char timestampStr[50];
-      sprintf(timestampStr, "%s", asctime(gmtime(&timestamps)));
+      // sprintf(timestampStr, "%s", asctime(gmtime(&timestamps)));
+      strftime(timestampStr, sizeof(timestampStr), "%Y-%m-%dT%H:%M:%SZ", gmtime(&timestamps));
+      sensorReadings.setTime(String(timestampStr));
+      sensorReadings.addField("temperature", temperature);
+      sensorReadings.addField("battery_voltage", batteryVoltage);
+      sensorReadings.addField("usb_presence", usbPresence);
+
+      // Convert the timestamp to a string in the desired format
+      // sensorReadings.setTime(timestamp[counter + 1]);
+      // char timestampStr[50];
+      // sprintf(timestampStr, "%s", asctime(gmtime(&timestamps)));
+      // strftime(timestampStr, sizeof(timestampStr), "%Y-%m-%dT%H:%M:%SZ", gmtime(&timestamps));
+      Serial.print("Writing old data: ");
       sensorReadings.addField("timestamps", timestampStr);
-      Serial.print("Writing: ");
       Serial.println(client.pointToLineProtocol(sensorReadings));
-      sensorReadings.setTime(timestamp[counter + 1]);
+
       client.writePoint(sensorReadings);
     }
     else
@@ -276,6 +291,9 @@ void loop()
       time_t timestamps = time(nullptr);
       char timestampStr[50];
       sprintf(timestampStr, "%s", asctime(gmtime(&timestamps)));
+      sensorReadings.addField("temperature", temperature);
+      sensorReadings.addField("battery_voltage", batteryVoltage);
+      sensorReadings.addField("usb_presence", usbPresence);
       sensorReadings.addField("timestamps", timestampStr);
       Serial.print("Writing: ");
       Serial.println(client.pointToLineProtocol(sensorReadings));
