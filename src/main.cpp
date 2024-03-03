@@ -266,8 +266,12 @@ void loop()
 
       time_t timestamps = timestamp[counter + 1]; // Corresponds to "February 23, 2022, 07:41:30 UTC"
                                                   // Set the timestamp for sensorReadings
+      time(&timestamps);
       sensorReadings.setTime(timestamps);
       char timestampStr[50];
+      time(&timestamps);
+      Serial.print("Synchronized time: ");
+      Serial.println(ctime(&timestamps));
       // sprintf(timestampStr, "%s", asctime(gmtime(&timestamps)));
       strftime(timestampStr, sizeof(timestampStr), "%Y-%m-%dT%H:%M:%SZ", gmtime(&timestamps));
       sensorReadings.setTime(String(timestampStr));
@@ -275,11 +279,7 @@ void loop()
       sensorReadings.addField("battery_voltage", batteryVoltage);
       sensorReadings.addField("usb_presence", usbPresence);
 
-      // Convert the timestamp to a string in the desired format
-      // sensorReadings.setTime(timestamp[counter + 1]);
-      // char timestampStr[50];
-      // sprintf(timestampStr, "%s", asctime(gmtime(&timestamps)));
-      // strftime(timestampStr, sizeof(timestampStr), "%Y-%m-%dT%H:%M:%SZ", gmtime(&timestamps));
+
       Serial.print("Writing old data: ");
       sensorReadings.addField("timestamps", timestampStr);
       Serial.println(client.pointToLineProtocol(sensorReadings));
