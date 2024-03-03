@@ -266,20 +266,28 @@ void loop()
 
       time_t timestamps = timestamp[counter + 1]; // Corresponds to "February 23, 2022, 07:41:30 UTC"
                                                   // Set the timestamp for sensorReadings
-      time(&timestamps);
-      sensorReadings.setTime(timestamps);
-      char timestampStr[50];
-      time(&timestamps);
+                                                  // Assuming you have retrieved the timestamp for the point
+      // time_t timestamp = timestamp[counter + 1];  // Get the timestamp
+      Serial.print("Original time: ");
+      Serial.println(ctime(&timestamps));
+      Serial.print("Original time in unix: ");
+      Serial.println(timestamp[counter + 1]);
+      // Set the timestamp for sensorReadings
+      time(&timestamps); // Synchronize the time
+      sensorReadings.setTime(WritePrecision::S);
+      sensorReadings.setTime(timestamps); // Set timestamp with second precision
+      sensorReadings.setTime(WritePrecision::S);
+      // Print synchronized time after setting the time for sensorReadings
+      time(&timestamps); // Get the synchronized time
       Serial.print("Synchronized time: ");
       Serial.println(ctime(&timestamps));
-      // sprintf(timestampStr, "%s", asctime(gmtime(&timestamps)));
+      char timestampStr[50];
+      sprintf(timestampStr, "%s", asctime(gmtime(&timestamps)));
       strftime(timestampStr, sizeof(timestampStr), "%Y-%m-%dT%H:%M:%SZ", gmtime(&timestamps));
-      sensorReadings.setTime(String(timestampStr));
+      // sensorReadings.setTime(timestamp, WritePrecision::S);
       sensorReadings.addField("temperature", temperature);
       sensorReadings.addField("battery_voltage", batteryVoltage);
       sensorReadings.addField("usb_presence", usbPresence);
-
-
       Serial.print("Writing old data: ");
       sensorReadings.addField("timestamps", timestampStr);
       Serial.println(client.pointToLineProtocol(sensorReadings));
