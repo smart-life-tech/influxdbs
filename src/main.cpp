@@ -190,6 +190,11 @@ void setup()
   initialBatteryVoltage = ums3.getBatteryVoltage(); // Store initial battery voltage
   strip.begin();                                    // Initialize the NeoPixel library
   strip.show();                                     // Initialize all pixels to 'off'
+// Enable messages batching and retry buffer
+#define WRITE_PRECISION WritePrecision::S
+#define MAX_BATCH_SIZE 10
+#define WRITE_BUFFER_SIZE 30
+  client.setWriteOptions(WriteOptions().writePrecision(WRITE_PRECISION).batchSize(MAX_BATCH_SIZE).bufferSize(WRITE_BUFFER_SIZE));
 }
 
 void loop()
@@ -264,23 +269,22 @@ void loop()
     if (writing)
     {
 
-      time_t timestamps = timestamp[counter + 1]; // Corresponds to "February 23, 2022, 07:41:30 UTC"
-                                                  // Set the timestamp for sensorReadings
-                                                  // Assuming you have retrieved the timestamp for the point
-      // time_t timestamp = timestamp[counter + 1];  // Get the timestamp
+      time_t timestamps = timestamp[counter + 1]; // Obtain the timestamp from your data source
       Serial.print("Original time: ");
       Serial.println(ctime(&timestamps));
       Serial.print("Original time in unix: ");
       Serial.println(timestamp[counter + 1]);
       // Set the timestamp for sensorReadings
-      time(&timestamps); // Synchronize the time
-      sensorReadings.setTime(WritePrecision::S);
-      sensorReadings.setTime(timestamps); // Set timestamp with second precision
-      sensorReadings.setTime(WritePrecision::S);
+      sensorReadings.setTime(timestamps); // Set timestamp without specifying precision
+
+      // Set the precision for sensorReadings
+      sensorReadings.setTime(WritePrecision::S); // Set precision to seconds
+
       // Print synchronized time after setting the time for sensorReadings
       time(&timestamps); // Get the synchronized time
       Serial.print("Synchronized time: ");
       Serial.println(ctime(&timestamps));
+
       char timestampStr[50];
       sprintf(timestampStr, "%s", asctime(gmtime(&timestamps)));
       strftime(timestampStr, sizeof(timestampStr), "%Y-%m-%dT%H:%M:%SZ", gmtime(&timestamps));
@@ -290,6 +294,7 @@ void loop()
       sensorReadings.addField("usb_presence", usbPresence);
       Serial.print("Writing old data: ");
       sensorReadings.addField("timestamps", timestampStr);
+      sensorReadings.setTime(time(&timestamps));
       Serial.println(client.pointToLineProtocol(sensorReadings));
 
       client.writePoint(sensorReadings);
