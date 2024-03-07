@@ -101,7 +101,7 @@ void saveDataToSPIFFS(float temperature, float batteryVoltage)
   counter++;
   temp[counter] = temperature;
   volt[counter] = batteryVoltage;
-  timestamp[counter] = time(nullptr);
+  timestamp[counter] = time(nullptr) - 3600;
   Serial.print("data saved at address :");
   Serial.println(counter);
   time_t timestamps = time(nullptr);
@@ -194,7 +194,7 @@ void setup()
 #define WRITE_PRECISION WritePrecision::S
 #define MAX_BATCH_SIZE 10
 #define WRITE_BUFFER_SIZE 30
-  client.setWriteOptions(WriteOptions().writePrecision(WRITE_PRECISION).batchSize(MAX_BATCH_SIZE).bufferSize(WRITE_BUFFER_SIZE));
+  client.setWriteOptions(WriteOptions().writePrecision(WRITE_PRECISION).batchSize(MAX_BATCH_SIZE).bufferSize(WRITE_BUFFER_SIZE).useServerTimestamp(true));
 }
 
 void loop()
@@ -274,17 +274,18 @@ void loop()
       Serial.println(ctime(&timestamps));
       Serial.print("Original time in unix: ");
       Serial.println(timestamp[counter + 1]);
-      // Set the timestamp for sensorReadings
-      sensorReadings.setTime(timestamps); // Set timestamp without specifying precision
 
       // Set the precision for sensorReadings
       sensorReadings.setTime(WritePrecision::S); // Set precision to seconds
+                                                 // Set the timestamp for sensorReadings
+      sensorReadings.setTime(timestamps);        // Set timestamp without specifying precision
 
       // Print synchronized time after setting the time for sensorReadings
-      time(&timestamps); // Get the synchronized time
+      //time(sensorReadings.getTime()); // Get the synchronized time
       Serial.print("Synchronized time: ");
+      Serial.println((sensorReadings.getTime()));
+      Serial.print("Synchronized time2 : ");
       Serial.println(ctime(&timestamps));
-
       char timestampStr[50];
       sprintf(timestampStr, "%s", asctime(gmtime(&timestamps)));
       strftime(timestampStr, sizeof(timestampStr), "%Y-%m-%dT%H:%M:%SZ", gmtime(&timestamps));
@@ -308,6 +309,7 @@ void loop()
       sensorReadings.addField("battery_voltage", batteryVoltage);
       sensorReadings.addField("usb_presence", usbPresence);
       sensorReadings.addField("timestamps", timestampStr);
+      sensorReadings.setTime(time(&timestamps));
       Serial.print("Writing: ");
       Serial.println(client.pointToLineProtocol(sensorReadings));
       // Resync time with NTP server
