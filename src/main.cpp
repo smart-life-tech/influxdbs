@@ -10,7 +10,9 @@
 #include <Adafruit_NeoPixel.h>
 #include <FS.h>
 #include <time.h>
-
+#include <InfluxData.h>
+// Define the InfluxData object
+//InfluxData influxData;
 #define PIN 2      // Input your RGB LED module GPIO pin
 #define NUM_LEDS 1 // Number of LEDs in your module
 
@@ -194,7 +196,7 @@ void setup()
 #define WRITE_PRECISION WritePrecision::S
 #define MAX_BATCH_SIZE 10
 #define WRITE_BUFFER_SIZE 30
-  client.setWriteOptions(WriteOptions().writePrecision(WRITE_PRECISION).batchSize(MAX_BATCH_SIZE).bufferSize(WRITE_BUFFER_SIZE).useServerTimestamp(true));
+  client.setWriteOptions(WriteOptions().writePrecision(WRITE_PRECISION).batchSize(MAX_BATCH_SIZE).bufferSize(WRITE_BUFFER_SIZE).useServerTimestamp(false));
 }
 
 void loop()
