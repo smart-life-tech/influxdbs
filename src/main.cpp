@@ -12,7 +12,7 @@
 #include <time.h>
 #include <InfluxData.h>
 // Define the InfluxData object
-//InfluxData influxData;
+// InfluxData influxData;
 #define PIN 2      // Input your RGB LED module GPIO pin
 #define NUM_LEDS 1 // Number of LEDs in your module
 
@@ -103,7 +103,7 @@ void saveDataToSPIFFS(float temperature, float batteryVoltage)
   counter++;
   temp[counter] = temperature;
   volt[counter] = batteryVoltage;
-  timestamp[counter] = time(nullptr) - 3600;
+  timestamp[counter] = time(nullptr) + 3600;
   Serial.print("data saved at address :");
   Serial.println(counter);
   time_t timestamps = time(nullptr);
@@ -129,6 +129,8 @@ void uploadDataFromSPIFFS()
     delay(500);
     Serial.print("data retrived  at address :");
     Serial.println(counter);
+    Serial.print("data retrived  in unix  time :");
+    Serial.println(timestamp[counter]);
     counter--;
   }
   else
@@ -143,7 +145,10 @@ void initDS18B20()
   sensors.begin();
 }
 int trial = 0;
-
+// Enable messages batching and retry buffer
+#define WRITE_PRECISION WritePrecision::S
+#define MAX_BATCH_SIZE 10
+#define WRITE_BUFFER_SIZE 30
 void setup()
 {
   Serial.begin(115200);
@@ -192,10 +197,7 @@ void setup()
   initialBatteryVoltage = ums3.getBatteryVoltage(); // Store initial battery voltage
   strip.begin();                                    // Initialize the NeoPixel library
   strip.show();                                     // Initialize all pixels to 'off'
-// Enable messages batching and retry buffer
-#define WRITE_PRECISION WritePrecision::S
-#define MAX_BATCH_SIZE 10
-#define WRITE_BUFFER_SIZE 30
+
   client.setWriteOptions(WriteOptions().writePrecision(WRITE_PRECISION).batchSize(MAX_BATCH_SIZE).bufferSize(WRITE_BUFFER_SIZE).useServerTimestamp(false));
 }
 
@@ -272,9 +274,14 @@ void loop()
     {
 
       time_t timestamps = timestamp[counter + 1]; // Obtain the timestamp from your data source
-      Serial.print("Original time: ");
-      Serial.println(ctime(&timestamps));
+      time_t tnow = time(&timestamps);
+      Serial.print("Synchronized time: ");
+      Serial.println(ctime(&tnow));
       Serial.print("Original time in unix: ");
+      Serial.println(timestamps);
+      Serial.print("Original time from memory: ");
+      Serial.println(ctime(&timestamps));
+      Serial.print("Original time in unix from memory: ");
       Serial.println(timestamp[counter + 1]);
 
       // Set the precision for sensorReadings
@@ -283,7 +290,7 @@ void loop()
       sensorReadings.setTime(timestamps);        // Set timestamp without specifying precision
 
       // Print synchronized time after setting the time for sensorReadings
-      //time(sensorReadings.getTime()); // Get the synchronized time
+      // time(sensorReadings.getTime()); // Get the synchronized time
       Serial.print("Synchronized time: ");
       Serial.println((sensorReadings.getTime()));
       Serial.print("Synchronized time2 : ");
@@ -297,9 +304,9 @@ void loop()
       sensorReadings.addField("usb_presence", usbPresence);
       Serial.print("Writing old data: ");
       sensorReadings.addField("timestamps", timestampStr);
-      sensorReadings.setTime(time(&timestamps));
+      sensorReadings.setTime(tnow);
+      client.setWriteOptions(WriteOptions().writePrecision(WRITE_PRECISION).batchSize(MAX_BATCH_SIZE).bufferSize(WRITE_BUFFER_SIZE).useServerTimestamp(false));
       Serial.println(client.pointToLineProtocol(sensorReadings));
-
       client.writePoint(sensorReadings);
     }
     else
