@@ -268,7 +268,7 @@ void loop()
       Serial.println(client.getLastErrorMessage());
     }
     // Upload data from SPIFFS if WiFi connection is restored
-    uploadDataFromSPIFFS();
+    // uploadDataFromSPIFFS();
 
     if (writing)
     {
@@ -332,7 +332,7 @@ void loop()
   float currentBatteryVoltage = ums3.getBatteryVoltage();
 
   // Check if battery voltage is below 3.60V or 4 hours have elapsed (whichever comes first)
-  if ((currentBatteryVoltage < 3.60) || (millis() - startMillis >= 4 * 60 * 60 * 1000 && !ums3.getVbusPresent()))
+  if ((currentBatteryVoltage < 3.60) || (millis() - startMillis >= (4 * 60 * 60 * 1000) && !ums3.getVbusPresent()))
   {
     // Shut down the ESP32
     // esp_deep_sleep_start();
@@ -359,7 +359,7 @@ void loop()
     Serial.println("wifi disconnected successfully");
     // wifiMulti.disconnect();
     //  Save data to SPIFFS if USB power is not present
-    saveDataToSPIFFS(temperature, batteryVoltage);
+    // saveDataToSPIFFS(temperature, batteryVoltage);
   }
 
   if (writing)
