@@ -15,7 +15,7 @@
 // InfluxData influxData;
 #define PIN 2      // Input your RGB LED module GPIO pin
 #define NUM_LEDS 1 // Number of LEDs in your module
-
+bool usbStatus = false;
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800);
 
 int DELAYVAL = 500; // Time (in milliseconds) to pause between pixels
@@ -207,7 +207,7 @@ void loop()
   sensorReadings.clearFields();
   int usbPresence = ums3.getVbusPresent();
 
-  if (usbPresence == 0 && WiFi.status() != WL_CONNECTED)
+  if (usbPresence == usbStatus && WiFi.status() != WL_CONNECTED)
   {
     WiFi.mode(WIFI_STA);
     WiFi.reconnect();
@@ -303,7 +303,7 @@ void loop()
       sensorReadings.addField("battery_voltage", batteryVoltage);
       sensorReadings.addField("usb_presence", usbPresence);
       Serial.print("Writing old data: ");
-      sensorReadings.addField("timestamps", timestampStr);
+
       sensorReadings.setTime(tnow);
       client.setWriteOptions(WriteOptions().writePrecision(WRITE_PRECISION).batchSize(MAX_BATCH_SIZE).bufferSize(WRITE_BUFFER_SIZE).useServerTimestamp(false));
       Serial.println(client.pointToLineProtocol(sensorReadings));
@@ -317,7 +317,6 @@ void loop()
       sensorReadings.addField("temperature", temperature);
       sensorReadings.addField("battery_voltage", batteryVoltage);
       sensorReadings.addField("usb_presence", usbPresence);
-      sensorReadings.addField("timestamps", timestampStr);
       sensorReadings.setTime(time(&timestamps));
       Serial.print("Writing: ");
       Serial.println(client.pointToLineProtocol(sensorReadings));
@@ -339,7 +338,7 @@ void loop()
     Serial.println("esp 32 will turn off now");
   }
   // Send data to InfluxDB if USB power is present
-  if (ums3.getVbusPresent() == 0)
+  if (ums3.getVbusPresent() == usbStatus)
   {
     if (fileCount == 0)
     {
