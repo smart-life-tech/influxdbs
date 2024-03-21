@@ -15,7 +15,7 @@
 // InfluxData influxData;
 #define PIN 2      // Input your RGB LED module GPIO pin
 #define NUM_LEDS 1 // Number of LEDs in your module
-bool usbStatus = false;
+bool usbStatus = true;
 Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800);
 
 int DELAYVAL = 500; // Time (in milliseconds) to pause between pixels
