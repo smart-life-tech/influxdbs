@@ -340,16 +340,17 @@ void loop()
   // Send data to InfluxDB if USB power is present
   if (ums3.getVbusPresent() == usbStatus)
   {
-    fileCount++;
+
     if (fileCount == 0)
     {
       rainbow(60 * 1000 / 256); // 60 seconds divided by 256-color spectrum
       strip.clear();
       strip.show();
     }
+    fileCount++;
     Serial.print("fileCount : ");
     Serial.println(fileCount);
-    if (fileCount >= 2)
+    if (fileCount >= 1)
       fileCount = 0; // do thid every 60 seconds
   }
   else
