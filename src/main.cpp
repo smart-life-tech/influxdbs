@@ -350,7 +350,7 @@ void loop()
     fileCount++;
     Serial.print("fileCount : ");
     Serial.println(fileCount);
-    if (fileCount >= 60)
+    if (fileCount >= 120)
       fileCount = 0; // do thid every 60 seconds
   }
   else
